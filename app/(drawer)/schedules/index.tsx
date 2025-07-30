@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { useEffect, useState } from 'react';
 import { Lines } from '@/constants/Lines';
-import axios from 'axios';
+import apiClient from '@/util/apiClient';
 
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
@@ -31,10 +31,8 @@ export default function LinesPage() {
 
   const fetchLines = async () => {
     try {
-      const response = await axios.get(
-        'https://cartographie.tam-voyages.com/gtfs/lignes'
-      );
-      const data = response.data;
+      const response = await apiClient.get('/lignes');
+      const { data } = response;
 
       const trams = data.filter((line: any) => line.type === 'tramway');
       const urbanBuses = data.filter(
