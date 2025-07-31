@@ -58,6 +58,39 @@ const updateApiKey = (newKey: string) => {
   console.log('🔑 API key updated');
 };
 
+// Add response interceptor to handle 404 errors and refresh API key
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If the error is 404 and we haven't already retried this request
+    if (error.response?.status === 404 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      console.log('🔄 404 error detected, refreshing API key...');
+
+      // Fetch new API key
+      const newKey = await fetchNewApiKey();
+
+      if (newKey) {
+        // Update the API key in the original request
+        originalRequest.headers['X-Api-Key'] = newKey;
+
+        // Update the default headers for future requests
+        updateApiKey(newKey);
+
+        // Retry the original request with the new API key
+        console.log('🔄 Retrying request with new API key...');
+        return apiClient.request(originalRequest);
+      }
+    }
+
+    // If we can't get a new API key or it's not a 404, reject the error
+    return Promise.reject(error);
+  }
+);
+
 // Initialize API key rotation
 let rotationInterval: NodeJS.Timeout | null = null;
 
